@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSecure Portal</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); text-align: center; width: 400px; }
+        .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .header-icon { font-size: 28px; color: #3b82f6; }
+        h1 { font-size: 24px; color: #1f2937; margin: 0; }
+        h2 { font-size: 18px; color: #4b5563; margin-top: 5px; font-weight: 400; }
+        p { color: #6b7280; margin-top: 20px; margin-bottom: 25px; }
+        .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .account-button { padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; text-decoration: none; color: #333; display: block; }
+        .donor { background-color: #e0e7ff; }
+        .receiver { background-color: #d1fae5; }
+        .community { background-color: #f3e8ff; grid-column: span 2; }
+        .hospital { background-color: #fee2e2; grid-column: span 2; }
+        .account-button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="header-icon">💙</span>
+            <h1>MediSecure Portal</h1>
+        </div>
+        <h2>Create Your Account</h2>
+        <p>Select your account type:</p>
+        <div class="button-grid">
+            <a href="/signup/donor" class="account-button donor">Donor</a>
+            <a href="/signup/receiver" class="account-button receiver">Receiver</a>
+            <a href="/signup/club" class="account-button community">Community and Clubs</a>
+            <a href="/signup/hospital" class="account-button hospital">Hospital</a>
+        </div>
+        <p style="margin-top: 20px; font-size: 14px;">Already have an account? <a href="/login" style="color: #3b82f6; text-decoration: none;">Log In</a></p>
+    </div>
+</body>
+</html>

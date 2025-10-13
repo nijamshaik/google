@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Receiver Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
+        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 20px; color: #10b981; }
+        .navbar a { color: #6b7280; text-decoration: none; font-weight: 500; }
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
+        h2 { color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        th, td { padding: 15px; text-align: left; }
+        th { background-color: #f3f4f6; color: #4b5563; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f9fafb; }
+        .request-btn { background-color: #10b981; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; }
+        .status-pending { color: #f59e0b; font-weight: bold; }
+        .status-accepted { color: #10b981; font-weight: bold; }
+        .status-rejected { color: #ef4444; font-weight: bold; }
+        .flash-message { padding: 15px; background-color: #dbeafe; color: #1e40af; border-left: 5px solid #3b82f6; border-radius: 6px; margin-bottom: 25px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Welcome, {{ session['user_name'] }}!</h1>
+        <a href="/logout">Logout</a>
+    </div>
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-message">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <h2>My Sent Requests</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Donor Name</th>
+                    <th>Blood Group</th>
+                    <th>Status</th>
+                    <th>Donor Contact (if accepted)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.name }}</td>
+                    <td>{{ req.blood_group }}</td>
+                    <td><span class="status-{{ req.status }}">{{ req.status|capitalize }}</span></td>
+                    <td>
+                        {% if req.status == 'accepted' %}
+                            {{ req.contact_no }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #6b7280;">You have not sent any requests yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 style="margin-top: 40px;">Find a Donor</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Blood Group</th>
+                    <th>Location</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donor in donors %}
+                <tr>
+                    <td>{{ donor.blood_group }}</td>
+                    <td>{{ donor.location if donor.location else 'Not specified' }}</td>
+                    <td><a href="/request_blood/{{ donor.id }}" class="request-btn">Send Request</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

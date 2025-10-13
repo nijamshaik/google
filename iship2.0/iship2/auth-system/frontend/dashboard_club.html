@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Club Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
+        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 20px; color: #8b5cf6; }
+        .navbar a { color: #6b7280; text-decoration: none; font-weight: 500; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 20px; text-align: center; }
+        h2 { color: #1f2937; margin-bottom: 25px; }
+        p { color: #4b5563; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>{{ session['user_name'] }} Dashboard</h1>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <div class="container">
+        <h2>Welcome to the Club & Community Portal</h2>
+        <p>This dashboard is under construction. Future features will include event management, donor drives, and member statistics.</p>
+    </div>
+</body>
+</html>

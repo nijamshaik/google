@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Donor Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
+        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 20px; color: #3b82f6; }
+        .navbar-links a { color: white; background-color: #3b82f6; text-decoration: none; font-weight: 500; padding: 8px 15px; border-radius: 6px; margin-left: 20px;}
+        .navbar-links a:hover { background-color: #2563eb; }
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
+        h2 { color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
+        .request-card { background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .request-info { font-size: 16px; color: #374151; }
+        .request-actions a { text-decoration: none; color: white; padding: 10px 18px; border-radius: 6px; font-weight: 500; margin-left: 10px; }
+        .accept-btn { background-color: #10b981; }
+        .reject-btn { background-color: #ef4444; }
+        .flash-message { padding: 15px; background-color: #d1fae5; color: #065f46; border-left: 5px solid #10b981; border-radius: 6px; margin-bottom: 25px; font-size: 16px; }
+        .no-requests { color: #6b7280; text-align: center; padding: 40px; background-color: #f3f4f6; border-radius: 8px; }
+        .contact-info { color: #4b5563; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Welcome, {{ session['user_name'] }}!</h1>
+        <div class="navbar-links">
+            <a href="/edit_donor_profile">Update My Info</a>
+            <a href="/logout" style="background-color: #6b7280;">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-message">{{ messages[0] }}</div>
+            {% endif %}
+        {% endwith %}
+
+        <h2>Pending Requests</h2>
+        {% if pending %}
+            {% for req in pending %}
+            <div class="request-card">
+                <div class="request-info">Request from: <strong>{{ req.name }}</strong></div>
+                <div class="request-actions">
+                    <a href="/handle_request/{{ req.id }}/accepted" class="accept-btn">Accept</a>
+                    <a href="/handle_request/{{ req.id }}/rejected" class="reject-btn">Reject</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-requests">You have no pending requests at the moment.</div>
+        {% endif %}
+
+        <h2 style="margin-top: 40px;">Accepted Requests (Contact Details Shared)</h2>
+        {% if accepted %}
+            {% for req in accepted %}
+            <div class="request-card">
+                <div class="request-info">Accepted request from: <strong>{{ req.name }}</strong> | Contact: <span class="contact-info">{{ req.contact_no }}</span></div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-requests">You have not accepted any requests yet.</div>
+        {% endif %}
+    </div>
+</body>
+</html>

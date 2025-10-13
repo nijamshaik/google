@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediSecure Login</title>
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+
+  <!-- Google Font -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Smooth focus outline */
+    input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Eye icon placement */
+    .toggle-password {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .toggle-password:hover {
+      color: #2563eb;
+    }
+  </style>
+</head>
+<body class="px-4 sm:px-6 lg:px-8">
+  <div
+    class="bg-white w-full max-w-md p-8 rounded-3xl shadow-lg border border-gray-200"
+  >
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
+        <span class="text-blue-600">MediSecure</span>
+      </h1>
+      <p class="text-gray-500 mt-2 text-sm sm:text-base">
+        Log in to access your dashboard
+      </p>
+    </div>
+
+    <!-- Flash message example -->
+    <!-- 
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="bg-red-100 text-red-700 border border-red-300 rounded-lg py-2 px-4 mb-4 text-sm text-center">
+          {{ messages[0] }}
+        </div>
+      {% endif %}
+    {% endwith %}
+    -->
+
+    <!-- Form -->
+    <form action="/login" method="post" class="space-y-6">
+      <!-- Email -->
+      <div>
+        <label
+          for="email"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Email</label
+        >
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          placeholder="you@example.com"
+          class="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <!-- Password -->
+      <div class="relative">
+        <label
+          for="password"
+          class="block text-sm font-medium text-gray-700 mb-1"
+          >Password</label
+        >
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          placeholder="••••••••"
+          class="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 focus:ring-2 focus:ring-blue-500"
+        />
+        <i id="togglePassword" class="fa-solid fa-eye toggle-password"></i>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        Log In
+      </button>
+    </form>
+
+    <!-- Footer / Signup -->
+    <div class="text-center mt-6 text-sm">
+      <p class="text-gray-600">
+        Don’t have an account?
+        <a
+          href="/"
+          class="text-blue-600 font-medium hover:text-blue-700 hover:underline"
+          >Sign Up</a
+        >
+      </p>
+    </div>
+  </div>
+
+  <!-- Toggle Password Script -->
+  <script>
+    const togglePassword = document.querySelector("#togglePassword");
+    const password = document.querySelector("#password");
+
+    togglePassword.addEventListener("click", () => {
+      const type =
+        password.getAttribute("type") === "password" ? "text" : "password";
+      password.setAttribute("type", type);
+      togglePassword.classList.toggle("fa-eye");
+      togglePassword.classList.toggle("fa-eye-slash");
+    });
+  </script>
+</body>
+</html>

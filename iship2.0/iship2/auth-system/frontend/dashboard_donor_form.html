@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update Donor Information</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
+        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 20px; color: #3b82f6; }
+        .navbar a { color: #6b7280; text-decoration: none; font-weight: 500; }
+        .container { max-width: 700px; margin: 40px auto; padding: 20px; }
+        .form-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+        h2 { color: #1f2937; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; color: #4b5563; font-weight: 500; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { grid-column: span 2; padding: 12px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #2563eb; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #4b5563; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>Donor Information</h1>
+        <a href="/dashboard">Back to Dashboard</a>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <h2>Update Your Donor Information</h2>
+            <form action="/update_donor" method="post" class="form-grid">
+                 <div class="form-group" style="grid-column: span 2;">
+                    <label for="blood_group">Blood Group</label>
+                    <select id="blood_group" name="blood_group" required>
+                        <option value="A+" {% if donor.blood_group == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if donor.blood_group == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if donor.blood_group == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if donor.blood_group == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if donor.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if donor.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
+                        <option value="O+" {% if donor.blood_group == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if donor.blood_group == 'O-' %}selected{% endif %}>O-</option>
+                    </select>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label for="location">Location (City, State)</label>
+                    <input type="text" id="location" name="location" value="{{ donor.location or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" value="{{ donor.age or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="last_donation">Last Donated (Months Ago)</label>
+                    <input type="number" id="last_donation" name="last_donation" value="{{ donor.last_donation_months or '' }}">
+                </div>
+                <button type="submit">Update Details</button>
+            </form>
+            <a href="/dashboard" class="back-link">Cancel</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hospital Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
+        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 20px; color: #ef4444; }
+        .navbar a { color: #6b7280; text-decoration: none; font-weight: 500; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+        h2 { color: #1f2937; margin-bottom: 25px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; }
+        .card { background-color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); text-align: center; }
+        .card h3 { margin-top: 0; color: #374151; }
+        .card p { font-size: 24px; font-weight: bold; margin: 10px 0 0; }
+        .card-donors p { color: #3b82f6; }
+        .card-blood p { color: #ef4444; }
+        .card-organs p { color: #8b5cf6; }
+        .card-records p { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>{{ session['user_name'] }} Dashboard</h1>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <div class="container">
+        <h2>Hospital Overview</h2>
+        <div class="card-grid">
+            <div class="card card-donors">
+                <h3>Donors Registered</h3>
+                <p>1,204</p> </div>
+            <div class="card card-blood">
+                <h3>Blood Availability</h3>
+                <p>Check Stock</p>
+            </div>
+            <div class="card card-organs">
+                <h3>Organ Requests</h3>
+                <p>32 Pending</p>
+            </div>
+            <div class="card card-records">
+                <h3>Patient Records</h3>
+                <p>View/Manage</p>
+            </div>
+        </div>
+        </div>
+</body>
+</html>
