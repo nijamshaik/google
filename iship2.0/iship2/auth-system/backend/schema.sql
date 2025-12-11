@@ -1,34 +1,63 @@
--- File: backend/schema.sql
+-- Blood Donation Management System Database Schema
 
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS donor_details;
-DROP TABLE IF EXISTS requests;
-
-CREATE TABLE users (
+-- Donors Table
+CREATE TABLE IF NOT EXISTS donors (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    contact_no TEXT NOT NULL,
-    user_type TEXT NOT NULL CHECK(user_type IN ('donor', 'receiver', 'hospital', 'club')),
-    hospital_id TEXT -- Only for hospitals
-);
-
-CREATE TABLE donor_details (
-    user_id INTEGER PRIMARY KEY,
+    contact TEXT NOT NULL,
     blood_group TEXT NOT NULL,
-    location TEXT,
-    age INTEGER,
-    last_donation_months INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users (id)
+    age INTEGER NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    last_donation_month TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE requests (
+-- Receivers Table
+CREATE TABLE IF NOT EXISTS receivers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    requester_id INTEGER NOT NULL,
-    donor_id INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending', -- pending, accepted, rejected
-    request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (requester_id) REFERENCES users (id),
-    FOREIGN KEY (donor_id) REFERENCES users (id)
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    contact TEXT NOT NULL,
+    hospital_name TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Hospitals Table
+CREATE TABLE IF NOT EXISTS hospitals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hospital_id TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    contact TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Requests Table
+CREATE TABLE IF NOT EXISTS requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    donor_id INTEGER NOT NULL,
+    receiver_id INTEGER NOT NULL,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES receivers(id) ON DELETE CASCADE,
+    UNIQUE (donor_id, receiver_id)
+);
+
+
+-- Indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_donors_email ON donors(email);
+CREATE INDEX IF NOT EXISTS idx_receivers_email ON receivers(email);
+CREATE INDEX IF NOT EXISTS idx_hospitals_email ON hospitals(email);
+CREATE INDEX IF NOT EXISTS idx_requests_donor ON requests(donor_id);
+CREATE INDEX IF NOT EXISTS idx_requests_receiver ON requests(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
