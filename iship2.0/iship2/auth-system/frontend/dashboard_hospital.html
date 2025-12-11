@@ -2,49 +2,232 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital Dashboard</title>
     <style>
-        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
-        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { margin: 0; font-size: 20px; color: #ef4444; }
-        .navbar a { color: #6b7280; text-decoration: none; font-weight: 500; }
-        .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
-        h2 { color: #1f2937; margin-bottom: 25px; }
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; }
-        .card { background-color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); text-align: center; }
-        .card h3 { margin-top: 0; color: #374151; }
-        .card p { font-size: 24px; font-weight: bold; margin: 10px 0 0; }
-        .card-donors p { color: #3b82f6; }
-        .card-blood p { color: #ef4444; }
-        .card-organs p { color: #8b5cf6; }
-        .card-records p { color: #f59e0b; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .navbar h1 {
+            color: #e74c3c;
+            font-size: 1.5em;
+        }
+        .logout-btn {
+            padding: 10px 25px;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            transition: transform 0.3s;
+        }
+        .logout-btn:hover {
+            transform: scale(1.05);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .welcome {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .welcome h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .card-description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .card-donors {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .card-availability {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .card-organs {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+        .card-records {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .section h3 {
+            color: #e74c3c;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .donors-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .donors-table th {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .donors-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .donors-table tr:hover {
+            background: #f8f8f8;
+        }
+        .blood-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .distance-badge {
+            background: #a8edea;
+            color: #333;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+        .hidden-section {
+            display: none;
+        }
+        .show {
+            display: block;
+        }
     </style>
+    <script>
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.classList.toggle('show');
+        }
+    </script>
 </head>
 <body>
     <div class="navbar">
-        <h1>{{ session['user_name'] }} Dashboard</h1>
-        <a href="/logout">Logout</a>
+        <h1>🏥 Hospital Dashboard</h1>
+        <a href="/logout" class="logout-btn">Logout</a>
     </div>
-
+    
     <div class="container">
-        <h2>Hospital Overview</h2>
-        <div class="card-grid">
-            <div class="card card-donors">
-                <h3>Donors Registered</h3>
-                <p>1,204</p> </div>
-            <div class="card card-blood">
-                <h3>Blood Availability</h3>
-                <p>Check Stock</p>
+        <div class="welcome">
+            <h2>Welcome, {{ hospital['name'] }}! 👋</h2>
+            <p style="color: #666;">Hospital ID: <strong>{{ hospital['hospital_id'] }}</strong> | Contact: <strong>{{ hospital['contact'] }}</strong></p>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="feature-card card-donors" onclick="toggleSection('donors-section')">
+                <div class="card-icon">🩸</div>
+                <div class="card-title">Donors List</div>
+                <div class="card-description">View all available blood donors</div>
             </div>
-            <div class="card card-organs">
-                <h3>Organ Requests</h3>
-                <p>32 Pending</p>
+            
+            <div class="feature-card card-availability">
+                <div class="card-icon">🧍</div>
+                <div class="card-title">Blood Availability</div>
+                <div class="card-description">Check blood stock in banks</div>
             </div>
-            <div class="card card-records">
-                <h3>Patient Records</h3>
-                <p>View/Manage</p>
+            
+            <div class="feature-card card-organs">
+                <div class="card-icon">🫀</div>
+                <div class="card-title">Organs</div>
+                <div class="card-description">View available organs</div>
+            </div>
+            
+            <div class="feature-card card-records">
+                <div class="card-icon">📁</div>
+                <div class="card-title">Records</div>
+                <div class="card-description">Previous donations & requests</div>
             </div>
         </div>
+        
+        <div id="donors-section" class="section hidden-section">
+            <h3>🩸 Available Donors (Sorted by Distance)</h3>
+            {% if donors %}
+            <table class="donors-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Blood Group</th>
+                        <th>Age</th>
+                        <th>Contact</th>
+                        <th>Distance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for donor in donors %}
+                    <tr>
+                        <td>{{ donor['name'] }}</td>
+                        <td><span class="blood-badge">{{ donor['blood_group'] }}</span></td>
+                        <td>{{ donor['age'] }} years</td>
+                        <td>{{ donor['contact'] }}</td>
+                        <td><span class="distance-badge">📍 {{ donor['distance'] }} km</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="text-align: center; color: #666; padding: 30px;">No donors available at the moment.</p>
+            {% endif %}
         </div>
+    </div>
 </body>
 </html>
