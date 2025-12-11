@@ -3,39 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediSecure Portal</title>
+    <title>Blood Donation Management System</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); text-align: center; width: 400px; }
-        .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .header-icon { font-size: 28px; color: #3b82f6; }
-        h1 { font-size: 24px; color: #1f2937; margin: 0; }
-        h2 { font-size: 18px; color: #4b5563; margin-top: 5px; font-weight: 400; }
-        p { color: #6b7280; margin-top: 20px; margin-bottom: 25px; }
-        .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .account-button { padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; text-decoration: none; color: #333; display: block; }
-        .donor { background-color: #e0e7ff; }
-        .receiver { background-color: #d1fae5; }
-        .community { background-color: #f3e8ff; grid-column: span 2; }
-        .hospital { background-color: #fee2e2; grid-column: span 2; }
-        .account-button:hover { opacity: 0.8; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 50px;
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+        .card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        .card h3 {
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .card p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: #f5576c;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #f5576c;
+            color: white;
+            transform: scale(1.05);
+        }
+        .donor-card {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .receiver-card {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+        .hospital-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        .login-section {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #eee;
+        }
+        .login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 30px;
+            font-size: 1.1em;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .login-btn:hover {
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <span class="header-icon">💙</span>
-            <h1>MediSecure Portal</h1>
+        <h1>🩸 Blood Donation Management System</h1>
+        <p class="subtitle">Save lives by donating blood. Join our community today!</p>
+        
+        <div class="card-container">
+            <div class="card donor-card">
+                <h3>💉 Donor</h3>
+                <p>Register as a blood donor and help save lives</p>
+                <a href="/signup_donor" class="btn">Sign Up as Donor</a>
+            </div>
+            
+            <div class="card receiver-card">
+                <h3>🩺 Receiver</h3>
+                <p>Request blood when you need it most</p>
+                <a href="/signup_receiver" class="btn">Sign Up as Receiver</a>
+            </div>
+            
+            <div class="card hospital-card">
+                <h3>🏥 Hospital</h3>
+                <p>Manage blood bank and emergency requests</p>
+                <a href="/signup_hospital" class="btn">Sign Up as Hospital</a>
+            </div>
         </div>
-        <h2>Create Your Account</h2>
-        <p>Select your account type:</p>
-        <div class="button-grid">
-            <a href="/signup/donor" class="account-button donor">Donor</a>
-            <a href="/signup/receiver" class="account-button receiver">Receiver</a>
-            <a href="/signup/club" class="account-button community">Community and Clubs</a>
-            <a href="/signup/hospital" class="account-button hospital">Hospital</a>
+        
+        <div class="login-section">
+            <p style="color: #666; margin-bottom: 20px;">Already have an account?</p>
+            <a href="/login" class="login-btn">Login Here</a>
         </div>
-        <p style="margin-top: 20px; font-size: 14px;">Already have an account? <a href="/login" style="color: #3b82f6; text-decoration: none;">Log In</a></p>
     </div>
 </body>
 </html>
