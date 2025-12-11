@@ -2,88 +2,235 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Receiver Dashboard</title>
     <style>
-        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
-        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { margin: 0; font-size: 20px; color: #10b981; }
-        .navbar a { color: #6b7280; text-decoration: none; font-weight: 500; }
-        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
-        h2 { color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
-        th, td { padding: 15px; text-align: left; }
-        th { background-color: #f3f4f6; color: #4b5563; font-weight: 600; }
-        tr:nth-child(even) { background-color: #f9fafb; }
-        .request-btn { background-color: #10b981; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; }
-        .status-pending { color: #f59e0b; font-weight: bold; }
-        .status-accepted { color: #10b981; font-weight: bold; }
-        .status-rejected { color: #ef4444; font-weight: bold; }
-        .flash-message { padding: 15px; background-color: #dbeafe; color: #1e40af; border-left: 5px solid #3b82f6; border-radius: 6px; margin-bottom: 25px; font-size: 16px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .navbar {
+            background: white; padding: 15px 30px; border-radius: 10px; margin-bottom: 30px;
+            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { color: #330867; font-size: 1.5em; }
+        .logout-btn {
+            padding: 10px 25px; background: #330867; color: white; text-decoration: none;
+            border-radius: 20px; transition: transform 0.3s;
+        }
+        .logout-btn:hover { transform: scale(1.05); }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .welcome, .section {
+            background: white; padding: 30px; border-radius: 15px; margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .section h3 { color: #330867; margin-bottom: 20px; font-size: 1.5em; }
+        .donors-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px; margin-top: 20px;
+        }
+        .donor-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #333; padding: 20px;
+            border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: transform 0.3s, opacity 0.5s;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .donor-card:hover { transform: translateY(-5px); }
+        .donor-info h4 { font-size: 1.3em; margin-bottom: 10px; color: #1e3c72; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95em; }
+        .blood-badge {
+            background: #e74c3c; color: white; padding: 5px 15px; border-radius: 20px;
+            font-weight: bold; display: inline-block; margin-bottom: 10px;
+        }
+        .distance-badge {
+            background: rgba(0,0,0,0.1); padding: 5px 15px; border-radius: 20px;
+            font-size: 0.9em; display: inline-block; min-width: 100px; text-align: center;
+        }
+        .request-btn {
+            width: 100%; padding: 10px; background: #28a745; color: white; border: none;
+            border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin-top: 10px;
+        }
+        .request-btn:hover:not(:disabled) { background: #218838; transform: scale(1.05); }
+        .request-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .no-donors, .no-requests { text-align: center; color: #666; padding: 50px; font-style: italic; }
+        .requests-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .requests-table th, .requests-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        .requests-table th { background-color: #f4f4f4; }
+        .status-badge {
+            padding: 5px 12px; border-radius: 15px; color: white; font-size: 0.9em;
+            font-weight: bold; text-transform: capitalize;
+        }
+        .status-accepted { background-color: #28a745; }
+        .status-pending { background-color: #ffc107; color: #333; }
+        .status-rejected { background-color: #dc3545; }
+        .contact-details { font-weight: bold; color: #330867; }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1>Welcome, {{ session['user_name'] }}!</h1>
-        <a href="/logout">Logout</a>
+        <h1>🩺 Receiver Dashboard</h1>
+        <a href="/logout" class="logout-btn">Logout</a>
     </div>
+
     <div class="container">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="flash-message">{{ messages[0] }}</div>
+        <div class="welcome">
+            <h2>Welcome, {{ receiver.name }}! 👋</h2>
+            <p style="color: #666;">Hospital: <strong>{{ receiver.hospital_name }}</strong> | Contact: <strong>{{ receiver.contact }}</strong></p>
+        </div>
+
+        <div class="section">
+            <h3>📈 My Sent Requests</h3>
+            {% if sent_requests %}
+            <table class="requests-table">
+                <thead>
+                    <tr>
+                        <th>Donor Name</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in sent_requests %}
+                    <tr>
+                        <td>{{ request.donor_name }}</td>
+                        <td>
+                            <span class="status-badge status-{{ request.status }}">{{ request.status }}</span>
+                        </td>
+                        <td>
+                            {% if request.status == 'accepted' %}
+                                <div class="contact-details">
+                                    <strong>Contact Donor Now:</strong><br>
+                                    📞 {{ request.donor_contact }} <br>
+                                    📧 {{ request.donor_email }}
+                                </div>
+                            {% elif request.status == 'pending' %}
+                                Waiting for the donor to respond...
+                            {% elif request.status == 'rejected' %}
+                                The donor has declined this request.
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-requests">
+                <p>You haven't sent any requests yet. Find a donor below to get started!</p>
+            </div>
             {% endif %}
-        {% endwith %}
-
-        <h2>My Sent Requests</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Donor Name</th>
-                    <th>Blood Group</th>
-                    <th>Status</th>
-                    <th>Donor Contact (if accepted)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for req in requests %}
-                <tr>
-                    <td>{{ req.name }}</td>
-                    <td>{{ req.blood_group }}</td>
-                    <td><span class="status-{{ req.status }}">{{ req.status|capitalize }}</span></td>
-                    <td>
-                        {% if req.status == 'accepted' %}
-                            {{ req.contact_no }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="4" style="text-align: center; color: #6b7280;">You have not sent any requests yet.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <h2 style="margin-top: 40px;">Find a Donor</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Blood Group</th>
-                    <th>Location</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
+        </div>
+        
+        <div class="section">
+            <h3>🩸 Available Donors</h3>
+            {% if donors %}
+            <div class="donors-grid">
                 {% for donor in donors %}
-                <tr>
-                    <td>{{ donor.blood_group }}</td>
-                    <td>{{ donor.location if donor.location else 'Not specified' }}</td>
-                    <td><a href="/request_blood/{{ donor.id }}" class="request-btn">Send Request</a></td>
-                </tr>
+                <div class="donor-card">
+                    <div class="donor-info">
+                        <h4>{{ donor.name }}</h4>
+                        <span class="blood-badge">{{ donor.blood_group }}</span>
+                        <span class="distance-badge">
+                             <span class="distance-placeholder" 
+                                   data-lat="{{ donor.latitude }}" 
+                                   data-lng="{{ donor.longitude }}">
+                                   Calculating...
+                             </span>
+                        </span>
+                        <div class="info-row" style="margin-top: 15px;">
+                            <span>Age:</span>
+                            <span>{{ donor.age }} years</span>
+                        </div>
+                        <div class="info-row">
+                            <span>Last Donation:</span>
+                            <span>{{ donor.last_donation_month or 'N/A' }}</span>
+                        </div>
+                    </div>
+                    <form class="send-request-form">
+                        <input type="hidden" name="donor_id" value="{{ donor.id }}">
+                        <button type="submit" class="request-btn">Send Blood Request</button>
+                    </form>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
+            </div>
+            {% else %}
+            <div class="no-donors">
+                <p>No new donors available at the moment. Please check back later! 🩸</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA_NEMQIudAcz19eO-jJ9ph3aWP74tdKWo&libraries=places" async defer></script>
+    
+    <script>
+        window.onload = function() {
+            // First check if a receiver object exists to prevent errors
+            const receiverData = '{{ receiver|tojson|safe }}';
+            if (!receiverData) return;
+            
+            const receiver = JSON.parse(receiverData);
+            const distanceService = new google.maps.DistanceMatrixService();
+            const receiverLocation = { lat: receiver.latitude, lng: receiver.longitude };
+
+            const donorPlaceholders = document.querySelectorAll('.distance-placeholder');
+
+            donorPlaceholders.forEach(placeholder => {
+                const donorLocation = {
+                    lat: parseFloat(placeholder.dataset.lat),
+                    lng: parseFloat(placeholder.dataset.lng)
+                };
+                const request = {
+                    origins: [receiverLocation],
+                    destinations: [donorLocation],
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    unitSystem: google.maps.UnitSystem.METRIC
+                };
+
+                distanceService.getDistanceMatrix(request, function (response, status) {
+                    if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                        placeholder.textContent = 🚗 ${response.rows[0].elements[0].distance.text};
+                    } else {
+                        placeholder.textContent = 'N/A';
+                    }
+                });
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const requestForms = document.querySelectorAll('.send-request-form');
+            requestForms.forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const donorId = this.querySelector('input[name="donor_id"]').value;
+                    const button = this.querySelector('button');
+                    button.disabled = true;
+                    button.textContent = 'Sending...';
+
+                    fetch('/send_request', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ donor_id: donorId })
+                    })
+                    .then(response => {
+                        if (!response.ok) { return response.json().then(err => { throw err; }); }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.message) {
+                            alert(data.message);
+                            window.location.reload();
+                        }
+                    })
+                    .catch(errorData => {
+                        console.error('Error:', errorData);
+                        alert('Error: ' + (errorData.error || 'An unknown error occurred.'));
+                        button.disabled = false;
+                        button.textContent = 'Send Blood Request';
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html>
