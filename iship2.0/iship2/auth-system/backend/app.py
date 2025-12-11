@@ -1,216 +1,421 @@
+# app.py (Updated with all 3 changes)
+
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify 
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, g, flash, session
-from werkzeug.security import generate_password_hash, check_password_hash
+import hashlib
+import math
 import os
-from flask_socketio import SocketIO, join_room
-from flask_mail import Mail, Message
+from datetime import datetime
 
-# --- App and Database Configuration ---
+app = Flask(_name_, template_folder='../frontend')
+app.secret_key = 'your_secret_key_here_change_in_production'
 
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), '../frontend'))
-app.config['SECRET_KEY'] = 'a_very_secret_key_for_session_management'
-DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
+DATABASE = 'blood_donation.db'
 
-# --- Mail Configuration ---
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('EMAIL_USER') # Your Gmail address
-app.config['MAIL_PASSWORD'] = os.environ.get('EMAIL_PASS') # Your 16-digit App Password
 
-# --- Initialize Extensions ---
-socketio = SocketIO(app, async_mode='eventlet')
-mail = Mail(app)
-
-# --- Database Functions ---
+# ✅ Database helper functions
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-    return db
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
 
+# ✅ Initialize DB automatically with schema
 def init_db():
-    with app.app_context():
-        db = get_db()
-        with app.open_resource('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
+    conn = get_db()
+    schema = """
+    -- Blood Donation Management System Database Schema
 
-# --- Main Application Routes ---
+    CREATE TABLE IF NOT EXISTS donors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        contact TEXT NOT NULL,
+        blood_group TEXT NOT NULL,
+        age INTEGER NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        last_donation_month TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
+    CREATE TABLE IF NOT EXISTS receivers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        contact TEXT NOT NULL,
+        hospital_name TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS hospitals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hospital_id TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        contact TEXT NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        donor_id INTEGER NOT NULL,
+        receiver_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (donor_id) REFERENCES donors(id) ON DELETE CASCADE,
+        FOREIGN KEY (receiver_id) REFERENCES receivers(id) ON DELETE CASCADE,
+        UNIQUE(donor_id, receiver_id) -- <<< CHANGE 1: Prevents duplicate requests
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_donors_email ON donors(email);
+    CREATE INDEX IF NOT EXISTS idx_receivers_email ON receivers(email);
+    CREATE INDEX IF NOT EXISTS idx_hospitals_email ON hospitals(email);
+    CREATE INDEX IF NOT EXISTS idx_requests_donor ON requests(donor_id);
+    CREATE INDEX IF NOT EXISTS idx_requests_receiver ON requests(receiver_id);
+    CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
+    """
+    conn.executescript(schema)
+    conn.commit()
+    conn.close()
+    print("✅ Database initialized successfully!")
+
+
+# ✅ Haversine distance formula
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    d_lat = math.radians(lat2 - lat1)
+    d_lon = math.radians(lon2 - lon1)
+    a = math.sin(d_lat / 2)*2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lon / 2)*2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+
+# ✅ Password hashing
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+# ✅ Routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/signup/<user_type>')
-def signup_page(user_type):
-    if user_type == 'donor':
-        return render_template('signup_donor.html')
-    elif user_type == 'receiver':
-        return render_template('signup_receiver.html')
-    elif user_type == 'hospital':
-        return render_template('signup_hospital.html')
-    elif user_type == 'club':
-        return render_template('signup_club.html')
-    return redirect(url_for('index'))
 
-@app.route('/signup', methods=['POST'])
-def signup():
-    # ... (This function remains unchanged from our previous working version)
-    user_type = request.form['user_type']
-    name = request.form['name']
-    email = request.form['email']
-    password = request.form['password']
-    contact_no = request.form['contact_no']
-    hashed_password = generate_password_hash(password, method='sha256')
-    db = get_db()
-    cursor = db.cursor()
-    try:
-        if user_type == 'hospital' or user_type == 'club':
-            registration_id = request.form['hospital_id']
-            cursor.execute("INSERT INTO users (name, email, password, contact_no, user_type, hospital_id) VALUES (?, ?, ?, ?, ?, ?)",(name, email, hashed_password, contact_no, user_type, registration_id))
-        else:
-             cursor.execute("INSERT INTO users (name, email, password, contact_no, user_type) VALUES (?, ?, ?, ?, ?)",(name, email, hashed_password, contact_no, user_type))
-        user_id = cursor.lastrowid
+@app.route('/signup_donor', methods=['GET', 'POST'])
+def signup_donor():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = hash_password(request.form['password'])
+        contact = request.form['contact']
+        blood_group = request.form['blood_group']
+        age = request.form['age']
+        latitude = float(request.form['latitude'])
+        longitude = float(request.form['longitude'])
+        last_donation_month = request.form.get('last_donation_month', '')
+
+        conn = get_db()
+        try:
+            conn.execute('''INSERT INTO donors (name, email, password, contact, blood_group, age, latitude, longitude, last_donation_month)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                         (name, email, password, contact, blood_group, age, latitude, longitude, last_donation_month))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('login'))
+        except sqlite3.IntegrityError:
+            conn.close()
+            return "Email already exists!", 400
+    return render_template('signup_donor.html')
+
+
+@app.route('/signup_receiver', methods=['GET', 'POST'])
+def signup_receiver():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = hash_password(request.form['password'])
+        contact = request.form['contact']
+        hospital_name = request.form['hospital_name']
+        latitude = float(request.form['latitude'])
+        longitude = float(request.form['longitude'])
+
+        conn = get_db()
+        try:
+            conn.execute('''INSERT INTO receivers (name, email, password, contact, hospital_name, latitude, longitude)
+                             VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                         (name, email, password, contact, hospital_name, latitude, longitude))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('login'))
+        except sqlite3.IntegrityError:
+            conn.close()
+            return "Email already exists!", 400
+    return render_template('signup_receiver.html')
+
+
+@app.route('/signup_hospital', methods=['GET', 'POST'])
+def signup_hospital():
+    if request.method == 'POST':
+        hospital_id = request.form['hospital_id']
+        name = request.form['name']
+        email = request.form['email']
+        password = hash_password(request.form['password'])
+        contact = request.form['contact']
+        latitude = float(request.form['latitude'])
+        longitude = float(request.form['longitude'])
+
+        conn = get_db()
+        try:
+            conn.execute('''INSERT INTO hospitals (hospital_id, name, email, password, contact, latitude, longitude)
+                             VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                         (hospital_id, name, email, password, contact, latitude, longitude))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('login'))
+        except sqlite3.IntegrityError:
+            conn.close()
+            return "Email or Hospital ID already exists!", 400
+    return render_template('signup_hospital.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = hash_password(request.form['password'])
+        user_type = request.form['user_type']
+        conn = get_db()
+
+        user = None
         if user_type == 'donor':
-            blood_group = request.form['blood_group']
-            cursor.execute("INSERT INTO donor_details (user_id, blood_group) VALUES (?, ?)",(user_id, blood_group))
-        db.commit()
-    except sqlite3.IntegrityError:
-        flash("Email address already registered.")
-        return redirect(url_for('signup_page', user_type=user_type))
-    return redirect(url_for('login_page'))
+            user = conn.execute('SELECT * FROM donors WHERE email = ? AND password = ?', (email, password)).fetchone()
+        elif user_type == 'receiver':
+            user = conn.execute('SELECT * FROM receivers WHERE email = ? AND password = ?', (email, password)).fetchone()
+        elif user_type == 'hospital':
+            user = conn.execute('SELECT * FROM hospitals WHERE email = ? AND password = ?', (email, password)).fetchone()
 
-@app.route('/login')
-def login_page():
+        if user:
+            session['user_id'] = user['id']
+            session['user_type'] = user_type
+            session['user_name'] = user['name']
+            conn.close()
+            return redirect(url_for(f'dashboard_{user_type}'))
+        conn.close()
+        return "Invalid credentials!", 401
     return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
-def login():
-    # ... (This function remains unchanged)
-    email = request.form['email']
-    password = request.form['password']
-    db = get_db()
-    user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-    if user and check_password_hash(user['password'], password):
-        session.clear()
-        session['user_id'] = user['id']
-        session['user_type'] = user['user_type']
-        session['user_name'] = user['name']
-        return redirect(url_for('dashboard'))
-    else:
-        flash("Invalid email or password.")
-        return redirect(url_for('login_page'))
 
-@app.route('/dashboard')
-def dashboard():
-    # ... (This function remains unchanged)
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    user_type = session['user_type']
-    db = get_db()
-    if user_type == 'donor':
-        pending_requests = db.execute("SELECT r.id, u.name, u.contact_no FROM requests r JOIN users u ON r.requester_id = u.id WHERE r.donor_id = ? AND r.status = 'pending'",(session['user_id'],)).fetchall()
-        accepted_requests = db.execute("SELECT u.name, u.contact_no FROM requests r JOIN users u ON r.requester_id = u.id WHERE r.donor_id = ? AND r.status = 'accepted'",(session['user_id'],)).fetchall()
-        return render_template('dashboard_donor_status.html', pending=pending_requests, accepted=accepted_requests)
-    elif user_type == 'receiver':
-        all_donors = db.execute("SELECT u.id, u.name, d.blood_group, d.location FROM users u JOIN donor_details d ON u.id = d.user_id").fetchall()
-        sent_requests = db.execute("SELECT r.status, u.name, u.contact_no, d.blood_group FROM requests r JOIN users u ON r.donor_id = u.id JOIN donor_details d ON r.donor_id = d.user_id WHERE r.requester_id = ?",(session['user_id'],)).fetchall()
-        return render_template('dashboard_receiver.html', donors=all_donors, requests=sent_requests)
-    elif user_type == 'hospital':
-        return render_template('dashboard_hospital.html')
-    elif user_type == 'club':
-        return render_template('dashboard_club.html')
-    return redirect(url_for('index'))
-
-@app.route('/edit_donor_profile')
-def edit_donor_profile():
-    # ... (This function remains unchanged)
+@app.route('/dashboard_donor')
+def dashboard_donor():
     if 'user_id' not in session or session['user_type'] != 'donor':
-        return redirect(url_for('login_page'))
-    db = get_db()
-    donor_info = db.execute("SELECT u.name, u.email, u.contact_no, d.blood_group, d.location, d.age, d.last_donation_months FROM users u JOIN donor_details d ON u.id = d.user_id WHERE u.id = ?",(session['user_id'],)).fetchone()
-    return render_template('dashboard_donor_form.html', donor=donor_info)
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    donor_id = session['user_id']
+    donor = conn.execute('SELECT * FROM donors WHERE id = ?', (donor_id,)).fetchone()
+    
+    # <<< CHANGE 3.1: Added receiver's email to the query
+    requests = conn.execute('''
+        SELECT r.id, r.status, rec.name as receiver_name, rec.contact as receiver_contact,
+               rec.email as receiver_email, rec.hospital_name, r.created_at
+        FROM requests r
+        JOIN receivers rec ON r.receiver_id = rec.id
+        WHERE r.donor_id = ?
+        ORDER BY r.created_at DESC
+    ''', (donor_id,)).fetchall()
+    
+    conn.close()
+    return render_template('dashboard_donor.html', donor=donor, requests=requests)
+
+
+# In app.py - Replace the existing function with this one
+
+# In app.py - Replace the existing function with this one
+
+@app.route('/dashboard_receiver')
+def dashboard_receiver():
+    if 'user_id' not in session or session['user_type'] != 'receiver':
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    receiver_id = session['user_id']
+    
+    # This line fetches the special 'Row' object
+    receiver_row = conn.execute('SELECT * FROM receivers WHERE id = ?', (receiver_id,)).fetchone()
+
+    # ========== THIS IS THE FIX ==========
+    # Convert the 'Row' object into a standard Python dictionary.
+    # We also handle the case where the receiver might not be found.
+    receiver_dict = dict(receiver_row) if receiver_row else None
+    # ====================================
+
+    # --- The rest of the function remains the same ---
+    
+    donors = conn.execute("""
+        SELECT * FROM donors
+        WHERE id NOT IN (
+            SELECT donor_id FROM requests WHERE receiver_id = ?
+        )
+    """, (receiver_id,)).fetchall()
+
+    donor_list = []
+    # Use the new dictionary here
+    if receiver_dict and donors:
+        for donor in donors:
+            # Here we need to convert each donor row to a dict too for consistency in the template
+            donor_dict = dict(donor)
+            distance = haversine(receiver_dict['latitude'], receiver_dict['longitude'], donor_dict['latitude'], donor_dict['longitude'])
+            donor_dict['distance'] = round(distance, 2) # Add distance to the dict
+            donor_list.append(donor_dict)
+            
+        donor_list.sort(key=lambda x: x['distance'])
+        
+    sent_requests = conn.execute("""
+        SELECT 
+            r.status, 
+            d.name as donor_name, 
+            d.email as donor_email,
+            d.contact as donor_contact, 
+            d.blood_group as donor_blood_group
+        FROM requests r
+        JOIN donors d ON r.donor_id = d.id
+        WHERE r.receiver_id = ?
+        ORDER BY r.created_at DESC
+    """, (receiver_id,)).fetchall()
+
+    conn.close()
+    
+    return render_template(
+        'dashboard_receiver.html', 
+        # Pass the corrected dictionary to the template
+        receiver=receiver_dict, 
+        donors=donor_list, 
+        sent_requests=sent_requests
+    )
+
+@app.route('/dashboard_hospital')
+def dashboard_hospital():
+    if 'user_id' not in session or session['user_type'] != 'hospital':
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    hospital = conn.execute('SELECT * FROM hospitals WHERE id = ?', (session['user_id'],)).fetchone()
+    donors = conn.execute('SELECT * FROM donors').fetchall()
+
+    donor_list = []
+    for donor in donors:
+        distance = haversine(hospital['latitude'], hospital['longitude'], donor['latitude'], donor['longitude'])
+        donor_list.append({
+            'id': donor['id'],
+            'name': donor['name'],
+            'blood_group': donor['blood_group'],
+            'age': donor['age'],
+            'contact': donor['contact'],
+            'distance': round(distance, 2)
+        })
+    donor_list.sort(key=lambda x: x['distance'])
+    conn.close()
+    return render_template('dashboard_hospital.html', hospital=hospital, donors=donor_list)
+
 
 @app.route('/update_donor', methods=['POST'])
-def update_donor_details():
-    # ... (This function remains unchanged)
+def update_donor():
     if 'user_id' not in session or session['user_type'] != 'donor':
-        return redirect(url_for('login_page'))
+        return redirect(url_for('login'))
+
     blood_group = request.form['blood_group']
-    location = request.form['location']
+    contact = request.form['contact']
     age = request.form['age']
-    last_donation = request.form['last_donation']
-    db = get_db()
-    db.execute("UPDATE donor_details SET blood_group = ?, location = ?, age = ?, last_donation_months = ? WHERE user_id = ?",(blood_group, location, age, last_donation, session['user_id']))
-    db.commit()
-    flash("Thank you! Your information has been updated. You are now visible to receivers.")
-    return redirect(url_for('dashboard'))
+    latitude = float(request.form['latitude'])
+    longitude = float(request.form['longitude'])
+    last_donation_month = request.form['last_donation_month']
 
-@app.route('/request_blood/<int:donor_id>')
-def request_blood(donor_id):
+    conn = get_db()
+    conn.execute('''UPDATE donors 
+                      SET blood_group = ?, contact = ?, age = ?, latitude = ?, longitude = ?, last_donation_month = ?
+                      WHERE id = ?''',
+                 (blood_group, contact, age, latitude, longitude, last_donation_month, session['user_id']))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('dashboard_donor'))
+
+# <<< CHANGE 1: Replaced the entire function with new logic
+@app.route('/send_request', methods=['POST'])
+def send_request():
     if 'user_id' not in session or session['user_type'] != 'receiver':
-        return redirect(url_for('login_page'))
-    requester_id = session['user_id']
-    db = get_db()
-    donor = db.execute("SELECT email, name FROM users WHERE id = ?", (donor_id,)).fetchone()
-    requester = db.execute("SELECT name FROM users WHERE id = ?", (requester_id,)).fetchone()
-    if not donor:
-        flash("Donor not found.")
-        return redirect(url_for('dashboard'))
-    db.execute("INSERT INTO requests (requester_id, donor_id) VALUES (?, ?)", (requester_id, donor_id))
-    db.commit()
-    flash(f"Request sent successfully.")
-    socketio.emit('new_request', {'message': f'You have a new blood request from {requester["name"]}!'}, room=str(donor_id))
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    # This now expects a JSON payload, e.g., from a JavaScript fetch() call
+    data = request.get_json()
+    if not data or 'donor_id' not in data:
+        return jsonify({'error': 'Donor ID is required'}), 400
+        
+    donor_id = data.get('donor_id')
+    receiver_id = session['user_id']
+    
+    conn = get_db()
     try:
-        msg = Message('New Blood Request on MediSecure Portal', sender=app.config['MAIL_USERNAME'], recipients=[donor['email']])
-        msg.body = f"Hello {donor['name']},\n\nYou have received a new blood request from {requester['name']}. Please log in to your MediSecure Portal dashboard to view and respond to the request.\n\nThank you!"
-        mail.send(msg)
-    except Exception as e:
-        print(f"Error sending email: {e}")
-    return redirect(url_for('dashboard'))
+        conn.execute(
+            'INSERT INTO requests (donor_id, receiver_id) VALUES (?, ?)',
+            (donor_id, receiver_id)
+        )
+        conn.commit()
+        return jsonify({"message": "Request sent successfully!"}), 201
+    except sqlite3.IntegrityError:
+        # This error is triggered by the UNIQUE constraint in the database schema
+        return jsonify({"error": "You have already sent a request to this donor."}), 409
+    finally:
+        conn.close()
 
-@app.route('/handle_request/<int:request_id>/<action>')
-def handle_request(action, request_id):
-    # ... (This function remains unchanged)
+@app.route('/accept_request/<int:request_id>')
+def accept_request(request_id):
     if 'user_id' not in session or session['user_type'] != 'donor':
-        return redirect(url_for('login_page'))
-    if action not in ['accepted', 'rejected']:
-        return redirect(url_for('dashboard'))
-    db = get_db()
-    request_item = db.execute("SELECT * FROM requests WHERE id = ? AND donor_id = ?", (request_id, session['user_id'])).fetchone()
-    if request_item:
-        db.execute("UPDATE requests SET status = ? WHERE id = ?", (action, request_id))
-        db.commit()
-        flash(f"Request has been {action}.")
-    else:
-        flash("Invalid request.")
-    return redirect(url_for('dashboard'))
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    conn.execute('UPDATE requests SET status = ? WHERE id = ? AND donor_id = ?',
+                 ('accepted', request_id, session['user_id']))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('dashboard_donor'))
+
+
+@app.route('/reject_request/<int:request_id>')
+def reject_request(request_id):
+    if 'user_id' not in session or session['user_type'] != 'donor':
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    conn.execute('UPDATE requests SET status = ? WHERE id = ? AND donor_id = ?',
+                 ('rejected', request_id, session['user_id']))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('dashboard_donor'))
+
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# --- SocketIO Event Handlers ---
-@socketio.on('connect')
-def handle_connect():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        join_room(str(user_id))
-        print(f"Client connected: user_id {user_id} joined room {user_id}")
 
-# --- Final Run Command ---
-if __name__ == '__main__':
+# ✅ Start server
+if _name_ == '_main_':
     if not os.path.exists(DATABASE):
         init_db()
-        print("Database initialized.")
-    print("Starting WebSocket server...")
-    socketio.run(app, debug=True)
+    else:
+        # Before running, you might want to delete the old blood_donation.db file
+        # so the new schema with the UNIQUE constraint is created.
+        print("✅ Database already exists. If you need to apply the new schema, please delete the old .db file and restart.")
+
+    # ✅ Use Cloud Run-compatible port configuration
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
