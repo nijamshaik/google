@@ -2,67 +2,176 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Donor Dashboard</title>
     <style>
-        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; }
-        .navbar { background-color: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { margin: 0; font-size: 20px; color: #3b82f6; }
-        .navbar a { color: #6b7280; text-decoration: none; font-weight: 500; }
-        .container { max-width: 700px; margin: 40px auto; padding: 20px; }
-        .form-container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
-        h2 { color: #1f2937; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 5px; color: #4b5563; font-weight: 500; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
-        button { grid-column: span 2; padding: 12px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        .flash-message { padding: 10px; background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; border-radius: 6px; margin-bottom: 15px; }
+        /* Basic Reset and Font Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        /* Layout and Card Styling */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        /* Typography and Links */
+        h1, h2 {
+            color: #1e3c72;
+        }
+        h2 {
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        .logout-btn {
+            padding: 10px 25px;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+
+        /* Requests Table Styling */
+        .requests-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .requests-table th, .requests-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .requests-table th {
+            background-color: #f8f9fa;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .requests-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: capitalize;
+            text-align: center;
+        }
+        .status-accepted { background-color: #28a745; } /* Green */
+        .status-pending { background-color: #ffc107; color: #333; } /* Yellow */
+        .status-rejected { background-color: #dc3545; } /* Red */
+
+        /* Action Buttons */
+        .action-links a {
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: opacity 0.3s;
+        }
+        .action-links a:hover {
+            opacity: 0.8;
+        }
+        .btn-accept { background-color: #28a745; }
+        .btn-reject { background-color: #dc3545; }
+        
+        .no-requests {
+            text-align: center;
+            color: #777;
+            padding: 50px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>Welcome, {{ session['user_name'] }}!</h1>
-        <a href="/logout">Logout</a>
-    </div>
-
     <div class="container">
-        <div class="form-container">
-            <h2>Update Your Donor Information</h2>
-             {% with messages = get_flashed_messages() %}
-              {% if messages %}
-                <div class="flash-message">
-                  {{ messages[0] }}
-                </div>
-              {% endif %}
-            {% endwith %}
-            <form action="/update_donor" method="post" class="form-grid">
-                 <div class="form-group" style="grid-column: span 2;">
-                    <label for="blood_group">Blood Group</label>
-                    <select id="blood_group" name="blood_group" required>
-                        <option value="A+" {% if donor.blood_group == 'A+' %}selected{% endif %}>A+</option>
-                        <option value="A-" {% if donor.blood_group == 'A-' %}selected{% endif %}>A-</option>
-                        <option value="B+" {% if donor.blood_group == 'B+' %}selected{% endif %}>B+</option>
-                        <option value="B-" {% if donor.blood_group == 'B-' %}selected{% endif %}>B-</option>
-                        <option value="AB+" {% if donor.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
-                        <option value="AB-" {% if donor.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
-                        <option value="O+" {% if donor.blood_group == 'O+' %}selected{% endif %}>O+</option>
-                        <option value="O-" {% if donor.blood_group == 'O-' %}selected{% endif %}>O-</option>
-                    </select>
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label for="location">Location (City, State)</label>
-                    <input type="text" id="location" name="location" value="{{ donor.location or '' }}">
-                </div>
-                <div class="form-group">
-                    <label for="age">Age</label>
-                    <input type="number" id="age" name="age" value="{{ donor.age or '' }}">
-                </div>
-                <div class="form-group">
-                    <label for="last_donation">Last Donated (Months Ago)</label>
-                    <input type="number" id="last_donation" name="last_donation" value="{{ donor.last_donation_months or '' }}">
-                </div>
-                <button type="submit">Update Details</button>
-            </form>
+        <div class="navbar">
+            <h1>🩸 Donor Dashboard</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+        
+        <div class="section">
+            <h2>Welcome, {{ donor.name }}!</h2>
+            <p style="color: #666;">Thank you for your willingness to save lives. Here are the incoming requests for you.</p>
+        </div>
+
+        <div class="section">
+            <h2>Incoming Blood Requests</h2>
+            {% if requests %}
+            <table class="requests-table">
+                <thead>
+                    <tr>
+                        <th>Receiver Name</th>
+                        <th>Hospital</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td>{{ req.receiver_name }}</td>
+                        <td>{{ req.hospital_name }}</td>
+                        <td>
+                            <span class="status-badge status-{{ req.status }}">{{ req.status }}</span>
+                        </td>
+                        <td class="action-links">
+                            {% if req.status == 'pending' %}
+                                <a href="/accept_request/{{ req.id }}" class="btn-accept">Accept</a>
+                                <a href="/reject_request/{{ req.id }}" class="btn-reject">Reject</a>
+                            {% else %}
+                                <span>Action Taken</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-requests">
+                <p>No incoming requests at the moment. We'll notify you when one arrives!</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </body>
